@@ -1,0 +1,4 @@
+start on runlevel [3]
+stop on runlevel [12456]
+respawn
+exec <%= @package_installpath %>/bin/svscanboot
