@@ -15,7 +15,7 @@ class daemontools::install inherits daemontools {
             mode    => '0644',
             owner   => 'root',
             group   => 'root',
-            content => template("daymontools/svscan.conf.erb"),
+            content => template("daemontools/svscan.conf.erb"),
             require => Package[$package_name];
         '/usr/bin/svc':
             ensure  => link,
