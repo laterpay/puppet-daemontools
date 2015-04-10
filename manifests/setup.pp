@@ -125,7 +125,7 @@ define daemontools::setup::supervise($supervisedir, $service_run_script, $log_en
     daemontools::envfile { $prefixedenvnames:
         value       => $service_envvars,
         servicename => $name,
-        require     => file["${supervisedir}/envdir/"]
+        require     => File["${supervisedir}/envdir/"]
     }
 
 
