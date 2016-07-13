@@ -33,8 +33,10 @@ define daemontools::setup (
     # are contradictory and don't have much sense
     # ($service_ensure will have higher priority then)
 
+    $file_down_ensure = absent
+
     case $service_status {
-        # make sure service is currently running
+        # Make sure service can be started via svc, but is not automatically started.
         'enabled': {
             daemontools::setup::supervise {
                 $name:
@@ -44,13 +46,11 @@ define daemontools::setup (
                     log_enabled             => $service_log_enabled,
                     service_run_log_script  => $service_run_log_script;
             }
-            file {
-                 "${supervise_dir_final}/${name}/down":
-                    ensure => present,
-                    notify => Service[$name];
-            }
+
+            $file_down_ensure = present
+
         }
-        # make sure service is currently running
+        # Make sure service is automatically started.
         'running': {
             daemontools::setup::supervise {
                 $name:
@@ -60,18 +60,14 @@ define daemontools::setup (
                     log_enabled             => $service_log_enabled,
                     service_run_log_script  => $service_run_log_script;
             }
-            file {
-                "${supervise_dir_final}/${name}/down":
-                    ensure => absent,
-                    notify => Service[$name];
-            }
+
+            $file_down_ensure = absent
+
         }
         'disabled': {
-            file {
-                "${supervise_dir_final}/${name}/down":
-                    ensure => present,
-                    notify => Service[$name];
-            }
+
+            $file_down_ensure = present
+
         }
         default: {
             fail("\"${service_status}\" is an unknown service status value")
@@ -79,10 +75,12 @@ define daemontools::setup (
     }
 
     if $service_ensure == 'running' {
-        file { "${supervise_dir_final}/${name}/down":
-            ensure => absent,
-            notify => Service[$name];
-        }
+        $file_down_ensure = absent
+    }
+
+    file { "${supervise_dir_final}/${name}/down":
+        ensure => $file_down_ensure,
+        notify => Service[$name];
     }
 
     service {
