@@ -36,7 +36,7 @@ define daemontools::setup (
     $file_down_ensure = absent
 
     case $service_status {
-        # make sure service is currently running
+        # Make sure service can be started via svc, but is not automatically started.
         'enabled': {
             daemontools::setup::supervise {
                 $name:
@@ -50,7 +50,7 @@ define daemontools::setup (
             $file_down_ensure = present
 
         }
-        # make sure service is currently running
+        # Make sure service is automatically started.
         'running': {
             daemontools::setup::supervise {
                 $name:
