@@ -26,53 +26,59 @@ define daemontools::setup (
         undef   => $daemontools::params::supervise_dir,
         default => $supervise_dir,
     }
-    
+
     #### Service management
 
-    # set params: in operation
-    if $service_ensure == 'running' {
-        case $service_status {
-            # make sure service is currently running, start it on boot
-            'enabled': {
-                daemontools::setup::supervise {
-                    $name:
-                        supervisedir            => "${supervise_dir_final}/${name}",
-                        service_run_script      => $service_run_script,
-                        service_envvars         => $service_envvars,
-                        log_enabled             => $service_log_enabled,
-                        service_run_log_script  => $service_run_log_script;
-                }
-                file { 
-                     "${supervise_dir_final}/${name}/down":
-                        ensure => present,
-                        notify => Service[$name];
-                }
+    # Notice that $service_ensure == 'running' and $service_status == 'disabled'
+    # are contradictory and don't have much sense
+    # ($service_ensure will have higher priority then)
+
+    case $service_status {
+        # make sure service is currently running
+        'enabled': {
+            daemontools::setup::supervise {
+                $name:
+                    supervisedir            => "${supervise_dir_final}/${name}",
+                    service_run_script      => $service_run_script,
+                    service_envvars         => $service_envvars,
+                    log_enabled             => $service_log_enabled,
+                    service_run_log_script  => $service_run_log_script;
             }
-            # make sure service is currently running, do not start it on boot
-            'running': {
-                daemontools::setup::supervise {
-                    $name:
-                        supervisedir            => "${supervise_dir_final}/${name}",
-                        service_run_script      => $service_run_script,
-                        service_envvars         => $service_envvars,
-                        log_enabled             => $service_log_enabled,
-                        service_run_log_script  => $service_run_log_script;
-                }
-                file { 
-                    "${supervise_dir_final}/${name}/down":
-                        ensure => absent,
-                        notify => Service[$name];
-                }
-            }
-            default: {
-                fail("\"${service_status}\" is an unknown service status value")
+            file {
+                 "${supervise_dir_final}/${name}/down":
+                    ensure => present,
+                    notify => Service[$name];
             }
         }
-    # set params: removal
-    } else {
-        # make sure the service is stopped and disabled (the removal itself will be
-        # done by package.pp)
-            # do not start service on boot, do not care whether currently running or not
+        # make sure service is currently running
+        'running': {
+            daemontools::setup::supervise {
+                $name:
+                    supervisedir            => "${supervise_dir_final}/${name}",
+                    service_run_script      => $service_run_script,
+                    service_envvars         => $service_envvars,
+                    log_enabled             => $service_log_enabled,
+                    service_run_log_script  => $service_run_log_script;
+            }
+            file {
+                "${supervise_dir_final}/${name}/down":
+                    ensure => absent,
+                    notify => Service[$name];
+            }
+        }
+        'disabled': {
+            file {
+                "${supervise_dir_final}/${name}/down":
+                    ensure => present,
+                    notify => Service[$name];
+            }
+        }
+        default: {
+            fail("\"${service_status}\" is an unknown service status value")
+        }
+    }
+
+    if $service_ensure == 'running' {
         file { "${supervise_dir_final}/${name}/down":
             ensure => absent,
             notify => Service[$name];
