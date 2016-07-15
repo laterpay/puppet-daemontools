@@ -33,8 +33,6 @@ define daemontools::setup (
     # are contradictory and don't have much sense
     # ($service_ensure will have higher priority then)
 
-    $file_down_ensure = absent
-
     case $service_status {
         # Make sure service can be started via svc, but is not automatically started.
         'enabled': {
@@ -46,8 +44,6 @@ define daemontools::setup (
                     log_enabled             => $service_log_enabled,
                     service_run_log_script  => $service_run_log_script;
             }
-
-            $file_down_ensure = present
 
         }
         # Make sure service is automatically started.
@@ -61,21 +57,20 @@ define daemontools::setup (
                     service_run_log_script  => $service_run_log_script;
             }
 
-            $file_down_ensure = absent
-
         }
-        'disabled': {
+        # Do nothing for now.
+        'disabled': {}
 
-            $file_down_ensure = present
-
-        }
         default: {
             fail("\"${service_status}\" is an unknown service status value")
         }
     }
 
-    if $service_ensure == 'running' {
+    # Determine "down" file presence.
+    if $service_ensure == 'running' or $service_status == 'running' {
         $file_down_ensure = absent
+    } else {
+        $file_down_ensure = present
     }
 
     file { "${supervise_dir_final}/${name}/down":
